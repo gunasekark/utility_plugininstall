@@ -81,22 +81,3 @@ do
 done
 
 
-instancesStr=`$AWS_CMD elb describe-load-balancers --load-balancer-name "$ELB" | grep "InstanceId"  | awk '{FS=":"; print $2}' | sed 's/\"//g' | sed 'N;s/\n/ /' | xargs`
-track_error $? "Instance details from ELB $ELB"
-IFS=' ' read -a instances <<< $instancesStr
-
-   instances=$1
-   #For each instance, deploy
-   for i in "${instances[@]}"
-   do
-   done
-   
- unzip -p ${f} META-INF/MANIFEST.MF | tr -d '\r' | sed -e ':a;N;$!ba;s/\n //g' | grep -e "^Plugin-Dependencies: " | awk '{ print $2 }' | tr ',' '\n' | awk -F ':' '{ print $1 }' | tr '\n' ' '
- 
- unzip -p git.hpi META-INF/MANIFEST.MF | tr -d '\r' | sed -e ':a;N;$!ba;s/\n //g' | grep -e "^Plugin-Dependencies: " | awk '{ print $2 }' | tr ',' '\n' | awk -F ':' '{ print $1 }' | tr '\n' ' '
- 
- 
- unzip pakcage manadatory
- 
- 
- curl -L --silent --output git.hpi  https://updates.jenkins-ci.org/latest/git.hpi
