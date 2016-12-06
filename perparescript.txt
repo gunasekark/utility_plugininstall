@@ -7,10 +7,10 @@ This script deploys to instances in an autoscaling group.
 
 OPTIONS:
  -h      Show this message
- -p      Dependency PluginName version : git,test)
+ -p      Dependency PluginName version : git:1.2.3,test:latest  -- REQUIRED)
  -d      Plugin Directory : $PLUGIN_DIR)
- -s		 URL path to download
- -o 	 Plugin owner
+ -s              URL path to download
+ -o      Plugin owner
 EOF
 }
 
@@ -30,11 +30,15 @@ log()
 }
 installplugin()
 {
-	log "installing $1"
+        log "installing $1"
+        plugin_need_tobe_installed=$1
+
+        plugin_name=
+        plugin_version=
 }
 checkdependency()
 {
-	log "verifying $1"
+        log "verifying $1"
 }
 
 PLUGIN_NAME=""
@@ -46,10 +50,10 @@ CURL_CMD="/cygdrive/c/ProgramFilesx86/Git/bin/curl -s -o /dev/null -w '%{http_co
 while getopts .d:h:p:o:s. OPTION
 do
      case $OPTION in
-		 d)
-			 PLUGIN_DIR=$OPTARG
-			 ;;
-		 h)
+                 d)
+                         PLUGIN_DIR=$OPTARG
+                         ;;
+                 h)
              usage
              exit 1
              ;;
@@ -63,7 +67,7 @@ do
              PLUGIN_SOURCE=$OPTARG
              ;;
          ?)
-			 log "additional param"
+                         log "additional param"
              usage
              exit
              ;;
@@ -74,10 +78,27 @@ log "Plugin name need to be verified for Dependency  : ${PLUGIN_NAME}"
 log "Plugin OWNER  : ${FILE_OWNER}"
 log "Plugin PLUGIN_SOURCE  : ${PLUGIN_SOURCE}"
 log "PLUGIN_DIR  : ${PLUGIN_DIR}"
-for plugin in "${PLUGIN_NAME}"
-do
-  installPlugin "$plugin"
-  checkdependency "$plugin"
-done
 
+if [ -z $PLUGIN_NAME ] ;
+then
+     log "Param validation error"
+     usage
+     exit 1
+fi
+#plugin_name_version=${PLUGIN_NAME}
+plugin_name_version=`echo ${PLUGIN_NAME} | sed 's/,/ /g' | sed 'N;s/\n//' `
+#log "plugin name ${plugin_name_version}"
+IFS=' ' read -a plugins <<< $plugin_name_version
+if [ ${#plugins[@]} -gt 0 ]; then
+     log "plugin count need to be installed ${#plugins[@]}"
+     for plugin in "${plugins[@]}"
+     do
+       installplugin "$plugin"
+       checkdependency "$plugin"
+     done
+else
+     log "Param validation error"
+     usage
+     exit 1
+fi
 
