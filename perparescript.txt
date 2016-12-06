@@ -1,0 +1,102 @@
+usage()
+{
+cat << EOF
+usage: $0 options
+
+This script deploys to instances in an autoscaling group.
+
+OPTIONS:
+ -h      Show this message
+ -p      Dependency PluginName version : git,test)
+ -d      Plugin Directory : $PLUGIN_DIR)
+ -s		 URL path to download
+ -o 	 Plugin owner
+EOF
+}
+
+track_error()
+{
+   if [ $1 != "0" ]; then
+        log "Execution Error on $2"
+        log "completed execution IN ERROR at `date`"
+        exit $1
+   fi
+
+}
+
+log()
+{
+   echo "`date +'%D %T'` : $1"
+}
+installplugin()
+{
+	log "installing $1"
+}
+checkdependency()
+{
+	log "verifying $1"
+}
+
+PLUGIN_NAME=""
+PLUGIN_SOURCE=""
+PLUGIN_DIR=/var/lib/jenkins/plugins
+FILE_OWNER=jenkins.jenkins
+CURL_CMD="/cygdrive/c/ProgramFilesx86/Git/bin/curl -s -o /dev/null -w '%{http_code}'"
+
+while getopts .d:h:p:o:s. OPTION
+do
+     case $OPTION in
+		 d)
+			 PLUGIN_DIR=$OPTARG
+			 ;;
+		 h)
+             usage
+             exit 1
+             ;;
+         p)
+             PLUGIN_NAME=$OPTARG
+             ;;
+         o)
+             FILE_OWNER=$OPTARG
+             ;;
+         s)
+             PLUGIN_SOURCE=$OPTARG
+             ;;
+         ?)
+			 log "additional param"
+             usage
+             exit
+             ;;
+     esac
+done
+
+log "Plugin name need to be verified for Dependency  : ${PLUGIN_NAME}"
+log "Plugin OWNER  : ${FILE_OWNER}"
+log "Plugin PLUGIN_SOURCE  : ${PLUGIN_SOURCE}"
+log "PLUGIN_DIR  : ${PLUGIN_DIR}"
+for plugin in "${PLUGIN_NAME}"
+do
+  installPlugin "$plugin"
+  checkdependency "$plugin"
+done
+
+
+instancesStr=`$AWS_CMD elb describe-load-balancers --load-balancer-name "$ELB" | grep "InstanceId"  | awk '{FS=":"; print $2}' | sed 's/\"//g' | sed 'N;s/\n/ /' | xargs`
+track_error $? "Instance details from ELB $ELB"
+IFS=' ' read -a instances <<< $instancesStr
+
+   instances=$1
+   #For each instance, deploy
+   for i in "${instances[@]}"
+   do
+   done
+   
+ unzip -p ${f} META-INF/MANIFEST.MF | tr -d '\r' | sed -e ':a;N;$!ba;s/\n //g' | grep -e "^Plugin-Dependencies: " | awk '{ print $2 }' | tr ',' '\n' | awk -F ':' '{ print $1 }' | tr '\n' ' '
+ 
+ unzip -p git.hpi META-INF/MANIFEST.MF | tr -d '\r' | sed -e ':a;N;$!ba;s/\n //g' | grep -e "^Plugin-Dependencies: " | awk '{ print $2 }' | tr ',' '\n' | awk -F ':' '{ print $1 }' | tr '\n' ' '
+ 
+ 
+ unzip pakcage manadatory
+ 
+ 
+ curl -L --silent --output git.hpi  https://updates.jenkins-ci.org/latest/git.hpi
