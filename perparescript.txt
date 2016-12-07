@@ -1,3 +1,4 @@
+#!/bin/bash
 usage()
 {
 cat << EOF
@@ -17,7 +18,7 @@ EOF
 track_error()
 {
    if [ $1 != "0" ]; then
-        log "Execution Error on $2"
+        log "$2 ecited with error $1"
         log "completed execution IN ERROR at `date`"
         exit $1
    fi
@@ -31,22 +32,82 @@ log()
 installplugin()
 {
         log "installing $1"
+        plugin_name=""
+        plugin_version=""
         plugin_need_tobe_installed=$1
+        download_url=""
+        echo $plugin_need_tobe_installed
+        IFS=':' read -a installpluginsinfo <<< ${plugin_need_tobe_installed}
+        echo ${#installpluginsinfo[@]}
+        echo ${installpluginsinfo[0]}
+        if [ ${#installpluginsinfo[@]} -eq 1 ];
+        then
+                 log "plugin need to be installed ${installpluginsinfo[0]} with latest version"
+                 plugin_name=${installpluginsinfo[0]}
+                 plugin_version="latest"
+        else
+                 log "plugin need to be installed ${installpluginsinfo[0]} with ${installpluginsinfo[1]} version"
+                 plugin_name=${installpluginsinfo[0]}
+                 plugin_version=${installpluginsinfo[1]}
+        fi
+        plugin_version=`echo ${plugin_version} | tr '[:upper:]' '[:lower:]'`
+        log "plugin_name  : ${plugin_name}"
+        log "plugin_version  : ${plugin_name}"
+        log "Downloading plugin...."
+        if [ ${plugin_version} = "latest" ] ; then
+                download_url="${PLUGIN_SOURCE}/latest/${plugin_name}.hpi"
+                log "Downloading from ${download_url}"
+        else
+                download_url="${PLUGIN_SOURCE}/download/plugins/${plugin_name}/${plugin_version}/${plugin_name}.hpi"
+                log "Downloading from ${download_url}"
+        fi
 
-        plugin_name=
-        plugin_version=
+        if [ -f ${PLUGIN_DIR}/${1}.hpi -o -f ${PLUGIN_DIR}/${1}.jpi ]; then
+                log "Skipped: $1 (already installed)"
+                return 0
+    else
+                log "dowloading the file : $1"
+                log "${WGET_CMD} ${PLUGIN_DIR}/${plugin_name}.hpi ${download_url}"
+                ret=`${WGET_CMD} ${download_url}`
+                track_error $? $plugin_name
+                return 0
+        fi
+        #curl or wget
+        #https://updates.jenkins-ci.org/download/plugins/saferestart/0.3/saferestart.hpi
+        #curl -L --silent --output ${PLUGIN_DIR}/${1}.hpi  https://updates.jenkins-ci.org/latest/${1}.hpi
+        #track_error
+
 }
 checkdependency()
 {
         log "verifying $1"
+        # read the dependency
+        # read dependcy count 0 then quit this function
+        # call install plugin one by one and check dependency
+        local dep_plugin_name=""
+        local dep_plugin_version=""
+        local plugin_dependency_verification=$1
+        IFS=':' read -a deps_pluginsinfo <<< $plugin_dependency_verification
+        dep_plugin_name=${deps_pluginsinfo[0]}
+        log "verifying dependency for ${dep_plugin_name}"
+        local plugin_file_name="${PLUGIN_DIR}/${dep_plugin_name}.hpi"
+        log "${plugin_file_name}"
+        local deps=$( unzip -p ${plugin_file_name} META-INF/MANIFEST.MF | tr -d '\r' | sed -e ':a;N;$!ba;s/\n //g' | grep -e "^Plugin-Dependencies: " | awk '{ print $2 }' | tr ',' '\n' | awk -F ':' '{ print $1":"$2 }' |  awk -F ';' '{ print $1 }'  | tr '\n' ' ' )
+        local depdencyplugin
+    for depdencyplugin in $deps; do
+          installplugin "$depdencyplugin"
+          checkdependency "$depdencyplugin"
+    done
+        return 0
+
 }
 
 PLUGIN_NAME=""
-PLUGIN_SOURCE=""
-PLUGIN_DIR=/var/lib/jenkins/plugins
+PLUGIN_SOURCE="https://updates.jenkins-ci.org/"
+PLUGIN_DIR=/home/bankvm5/plugtest
 FILE_OWNER=jenkins.jenkins
-CURL_CMD="/cygdrive/c/ProgramFilesx86/Git/bin/curl -s -o /dev/null -w '%{http_code}'"
-
+CURL_CMD="curl -L --output "
+WGET_CMD="wget "
 while getopts .d:h:p:o:s. OPTION
 do
      case $OPTION in
