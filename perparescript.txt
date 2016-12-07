@@ -62,7 +62,7 @@ installplugin()
                 log "Downloading from ${download_url}"
         fi
 
-        if [ -f ${PLUGIN_DIR}/${1}.hpi -o -f ${PLUGIN_DIR}/${1}.jpi ]; then
+        if [ -f ${PLUGIN_DIR}/${plugin_name}.hpi -o -f ${PLUGIN_DIR}/${plugin_name}.jpi ]; then
                 log "Skipped: $1 (already installed)"
                 return 0
     else
