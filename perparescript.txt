@@ -90,6 +90,11 @@ installplugin()
                 download_url="${PLUGIN_SOURCE}/latest/${plugin_name}.hpi"
                 log "Downloading from ${download_url}"
 				#get the version for comparing pupose
+				redirect_url=`${CURL_CMD} -Ls -o /dev/null -w %{url_effective} "https://updates.jenkins-ci.org/latest/saferestart.hpi"`
+				IFS='/' read -a url_split_array <<< ${redirect_url}
+				version_location=`expr ${#url_split_array[@]} - 2`
+				plugin_version=${url_split_array[$version_location]}
+
         else
                 download_url="${PLUGIN_SOURCE}/download/plugins/${plugin_name}/${plugin_version}/${plugin_name}.hpi"
                 log "Downloading from ${download_url}"
@@ -97,6 +102,28 @@ installplugin()
 
         if [ -f ${PLUGIN_DIR}/${plugin_name}.hpi -o -f ${PLUGIN_DIR}/${plugin_name}.jpi ]; then
 		        #get the installed version
+				#unzip -p saferestart.hpi META-INF/MANIFEST.MF | tr -d '\r' | sed -e ':a;N;$!ba;s/\n //g' | grep -e "^Plugin-Version: " | awk '{ print $2 }' | tr '\n' '\0'
+				existing_version=$( unzip -p ${PLUGIN_DIR}/${plugin_name}.hpi META-INF/MANIFEST.MF | tr -d '\r' | sed -e ':a;N;$!ba;s/\n //g' | grep -e "^Plugin-Version: " | awk '{ print $2 }' | tr '\n' '\0' )
+				vercomp $existing_version $plugin_version
+				case $? in
+					0) 
+						log " Skipped : $1 : Existing version ($existing_version) and required versions are equal (already installed)"
+						;;
+					1) 
+						log " Skipped : $1 : Existing version ($existing_version) latest (already installed)"
+					    ;;
+					2) 
+						log " Updating : $1 : Existing version old (already installed). So installing required version"
+						mv  "${PLUGIN_DIR}/${plugin_name}.hpi" "${PLUGIN_DIR}/${plugin_name}_`date +'%D_%T'`.hpi"
+						track_error $? "unable to move existing $plugin_name"
+						log "dowloading the file : $1"
+						log "${WGET_CMD} ${PLUGIN_DIR}/${plugin_name}.hpi ${download_url}"
+						ret=`${WGET_CMD} ${download_url}`
+						track_error $? $plugin_name
+						return 0
+						;;
+				esac
+				
 				#Compare the installed version with required version
 				#     vercomp Existing version  Required version
 				#     vercomp $1 $2
@@ -117,8 +144,8 @@ installplugin()
 				#		;;
 				#esac
 				#if it is old download the latest version
-                log "Skipped: $1 (already installed)"
-                return 0
+                #log "Skipped: $1 (already installed)"
+                #return 0
 		else
                 log "dowloading the file : $1"
                 log "${WGET_CMD} ${PLUGIN_DIR}/${plugin_name}.hpi ${download_url}"
@@ -166,7 +193,7 @@ PLUGIN_NAME=""
 PLUGIN_SOURCE="https://updates.jenkins-ci.org/"
 PLUGIN_DIR=/home/bankvm5/plugtest
 FILE_OWNER=jenkins.jenkins
-CURL_CMD="curl -L --output "
+CURL_CMD="curl "
 WGET_CMD="wget "
 while getopts .d:h:p:o:s. OPTION
 do
