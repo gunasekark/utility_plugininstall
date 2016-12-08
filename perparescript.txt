@@ -90,7 +90,7 @@ installplugin()
                 download_url="${PLUGIN_SOURCE}/latest/${plugin_name}.hpi"
                 log "Downloading from ${download_url}"
 				#get the version for comparing pupose
-				redirect_url=`${CURL_CMD} -Ls -o /dev/null -w %{url_effective} "https://updates.jenkins-ci.org/latest/saferestart.hpi"`
+				redirect_url=`${CURL_CMD} -Ls -o /dev/null -w %{url_effective} "${download_url}"`
 				IFS='/' read -a url_split_array <<< ${redirect_url}
 				version_location=`expr ${#url_split_array[@]} - 2`
 				plugin_version=${url_split_array[$version_location]}
