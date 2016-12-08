@@ -29,6 +29,38 @@ log()
 {
    echo "`date +'%D %T'` : $1"
 }
+
+vercomp () {
+    if [[ $1 == $2 ]]
+    then
+        return 0
+    fi
+    local IFS=.
+    local i ver1=($1) ver2=($2)
+    # fill empty fields in ver1 with zeros
+    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
+    do
+        ver1[i]=0
+    done
+    for ((i=0; i<${#ver1[@]}; i++))
+    do
+        if [[ -z ${ver2[i]} ]]
+        then
+            # fill empty fields in ver2 with zeros
+            ver2[i]=0
+        fi
+        if ((${ver1[i]} > ${ver2[i]}))
+        then
+            return 1
+        fi
+        if ((${ver1[i]} < ${ver2[i]}))
+        then
+            return 2
+        fi
+    done
+    return 0
+}
+
 installplugin()
 {
         log "installing $1"
@@ -57,15 +89,37 @@ installplugin()
         if [ ${plugin_version} = "latest" ] ; then
                 download_url="${PLUGIN_SOURCE}/latest/${plugin_name}.hpi"
                 log "Downloading from ${download_url}"
+				#get the version for comparing pupose
         else
                 download_url="${PLUGIN_SOURCE}/download/plugins/${plugin_name}/${plugin_version}/${plugin_name}.hpi"
                 log "Downloading from ${download_url}"
         fi
 
         if [ -f ${PLUGIN_DIR}/${plugin_name}.hpi -o -f ${PLUGIN_DIR}/${plugin_name}.jpi ]; then
+		        #get the installed version
+				#Compare the installed version with required version
+				#     vercomp Existing version  Required version
+				#     vercomp $1 $2
+				#case $? in
+				#	0) 
+				#		log " Skipped : $1 : Existing version and required versions are equal (already installed)"
+				#		;;
+				#	1) 
+				#		log " Skipped : $1 : Existing version latest (already installed)"
+				#	    ;;
+				#	2) 
+				#		log " Updating : $1 : Existing version old (already installed). So installing required version"
+				#		log "dowloading the file : $1"
+				#		log "${WGET_CMD} ${PLUGIN_DIR}/${plugin_name}.hpi ${download_url}"
+				#		ret=`${WGET_CMD} ${download_url}`
+				#		track_error $? $plugin_name
+				#		return 0
+				#		;;
+				#esac
+				#if it is old download the latest version
                 log "Skipped: $1 (already installed)"
                 return 0
-    else
+		else
                 log "dowloading the file : $1"
                 log "${WGET_CMD} ${PLUGIN_DIR}/${plugin_name}.hpi ${download_url}"
                 ret=`${WGET_CMD} ${download_url}`
@@ -134,7 +188,7 @@ do
              PLUGIN_SOURCE=$OPTARG
              ;;
          ?)
-                         log "additional param"
+             log "additional param"
              usage
              exit
              ;;
