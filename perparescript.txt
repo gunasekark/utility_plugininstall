@@ -114,7 +114,7 @@ installplugin()
 					    ;;
 					2) 
 						log " Updating : $1 : Existing version old (already installed). So installing required version"
-						mv  "${PLUGIN_DIR}/${plugin_name}.hpi" "${PLUGIN_DIR}/${plugin_name}_`date +'%D_%T'`.hpi"
+						mv  "${PLUGIN_DIR}/${plugin_name}.hpi" "${PLUGIN_DIR}/${plugin_name}_`date +'%y%m%d_%H%M%S'`.hpi"
 						track_error $? "unable to move existing $plugin_name"
 						log "dowloading the file : $1"
 						log "${WGET_CMD} ${PLUGIN_DIR}/${plugin_name}.hpi ${download_url}"
