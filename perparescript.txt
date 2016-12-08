@@ -94,10 +94,16 @@ checkdependency()
         log "${plugin_file_name}"
         local deps=$( unzip -p ${plugin_file_name} META-INF/MANIFEST.MF | tr -d '\r' | sed -e ':a;N;$!ba;s/\n //g' | grep -e "^Plugin-Dependencies: " | awk '{ print $2 }' | tr ',' '\n' | awk -F ':' '{ print $1":"$2 }' |  awk -F ';' '{ print $1 }'  | tr '\n' ' ' )
         local depdencyplugin
-    for depdencyplugin in $deps; do
-          installplugin "$depdencyplugin"
-          checkdependency "$depdencyplugin"
-    done
+        if [ -z "$deps" ];
+        then
+           log "No Dependecy for ${dep_plugin_name} plugin"
+        else
+           log " ${dep_plugin_name} plugin  requires ${deps}"
+           for depdencyplugin in $deps; do
+             installplugin "$depdencyplugin"
+             checkdependency "$depdencyplugin"
+           done
+        fi
         return 0
 
 }
@@ -162,4 +168,3 @@ else
      usage
      exit 1
 fi
-
